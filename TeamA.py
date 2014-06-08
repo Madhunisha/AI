@@ -23,17 +23,7 @@ class TeamA:
         #  for white sqaures possible moves
         self.possible_moves = set (((2,2), (2,3), (2,4), (2,5), (3,2), (3,5), (4,2), (4,5), (5,2), (5,3), (5,4), (5,5)))
 	
-    def get_possible_moves (self, row, col):
-        possible_moves = set()
-        for i in self.directions:
-            check_row = row + i[0]
-            check_col = col + i[1]
-            if (0 <= check_row < self.size and 0 <= check_col < self.size and self.board[check_row][check_col]==' '):
-                possible_moves.add((check_row, check_col))
-		
-        return possible_moves
-   
-
+    
     def PrintBoard(self):
         # Print column numbers
         print("  ",end="")
@@ -56,6 +46,97 @@ class TeamA:
         #in one of the directions. If the input position is adjacent to an opponents piece, this function looks to see if there is a
         #a chain of opponent pieces in that direction, which ends with one of the players pieces.
 
+
+    
+    def get_possible_moves (self, row, col):
+        possible_moves = set()
+        for i in self.directions:
+            check_row = row + i[0]
+            check_col = col + i[1]
+            if (0 <= check_row < self.size and 0 <= check_col < self.size and self.board[check_row][check_col]==' '):
+                possible_moves.add((check_row, check_col))
+		
+        return possible_moves
+   
+
+
+    def update_possible_moves(self, row, col):
+	self.possible_moves.remove((row, col))
+	new_moves = self.get_possible_moves(row, col)
+	self.possible_moves = self.possible_moves.union(new_moves)
+        return new_moves       
+
+
+
+    def backtrack_and_update_possible_moves(self, row, col, new_moves): 
+	# backtrack and add the move removed
+	self.possible_moves.add((row,col))
+	# fetch the moves which are valid and which should not be removed during backtracking
+	valid_moves = self.find_valid_moves(new_moves)
+	# subtract  the valid moves from the new_moves so they won't be removed from possible_moves set
+	new_moves -= valid_moves
+	# remove the moves which were added based on the move removed previously
+	self.possible_moves -= new_moves
+ 
+
+
+    # checks if the move you are going to remove in backtracking is a valid move due to some neighbouring square or not, if yes it shouldn't be removed. Means if that move is surrounded by some disc then its a neighbouring sqaure of that disc so its a valid move
+    def find_valid_moves(self, moves):
+	valid_moves = set()
+	for move in moves:
+		for direction in self.directions:
+			check_row = move[0] + direction[0]
+            		check_col = move[1] + direction[1]
+            		if (0 <= check_row < self.size and 0 <= check_col < self.size and self.board[check_row][check_col]!=' '):
+                		valid_moves.add(move)
+				break
+
+	return valid_moves	
+
+
+
+    def FindMoves(self, playerColor, oppColor):
+        moves = []
+        for move in self.possible_moves:
+                if (self.islegal(move[0], move[1], playerColor, oppColor)):
+                    moves.append((move[0], move[1]))
+        if(moves):
+            return moves
+	return [(-1, -1)]
+
+
+    # returns moves ordered in descending order of their values
+    def order_moves(self, playerColor,oppColor,alpha,beta,depth):
+	global DEPTHLIMIT
+	moves = self.FindMoves(playerColor,oppColor)
+	# temporarily change the value
+	DEPTHLIMIT = 2
+	ordered_moves = []
+	respective_ordered_vals = []
+	for move in moves:
+		board = copy.deepcopy(self.board)
+	        board_changed = 0
+		if self.place_piece(move[0],move[1],playerColor,oppColor):
+			board_changed = 1
+			new_moves = self.update_possible_moves(move[0],move[1])	
+            	v = self.minply(playerColor,oppColor,alpha,beta,depth+1)
+		self.board = board
+		if board_changed == 1:
+			board_changed = 0
+			self.backtrack_and_update_possible_moves(move[0],move[1], new_moves)
+		index = 0
+		for val in respective_ordered_vals:
+			if val < v:
+				break
+			index += 1
+		respective_ordered_vals.insert(index, v)
+		ordered_moves.insert(index, move)
+	#print ("Moves:"+ str(ordered_moves))
+	#print ("Values:"+ str(respective_ordered_vals))	
+	# Reset it back to 6
+	DEPTHLIMIT = 6
+	return ordered_moves
+	
 
 
     def islegal(self, row, col, player, opp):
@@ -124,7 +205,7 @@ class TeamA:
         return legal
 
 
-
+    
     #  Places piece of opponent's color at (row,col) and then returns
     #  the best move, determined by the make_move(...) function
     def play_square(self, row, col, playerColor, oppColor):
@@ -132,9 +213,7 @@ class TeamA:
          if (row, col) != (-1, -1):
                 if self.place_piece(row, col, oppColor, playerColor):
 			# obtain new possible moves surronding the last square played and add them, also delete the last square played
-			self.possible_moves.remove((row, col))
-			self.possible_moves = self.possible_moves.union(self.get_possible_moves(row, col))
-                
+			self.update_possible_moves(row, col)
                 # Determine best move and return value to Matchmaker
                 self.r = -1
                 self.c = -1
@@ -143,9 +222,7 @@ class TeamA:
                 # print("|||||||||||||||||||||||||||||||||||||||||||||")
                 self.MaxplyMaster(playerColor,oppColor,-1000,1000,0)
                 if self.place_piece(self.r, self.c,playerColor,oppColor):
-			self.possible_moves.remove((self.r, self.c))
-			self.possible_moves = self.possible_moves.union(self.get_possible_moves(self.r, self.c))
-                
+			self.update_possible_moves(self.r, self.c)                
                 return (self.r,self.c)
 
 
@@ -163,17 +240,6 @@ class TeamA:
             return self.board[row][col]
 
             #Search the game board for a legal move, and play the first one it finds
-
-    
-
-    def FindMoves(self, playerColor, oppColor):
-        moves = []
-        for move in self.possible_moves:
-                if (self.islegal(move[0], move[1], playerColor, oppColor)):
-                    moves.append((move[0], move[1]))
-        if(moves):
-            return moves
-	return [(-1, -1)]
 
 
 
@@ -197,65 +263,8 @@ class TeamA:
         if (7,7) in playerPossibleMoves and (7,7)not in opponentPossibleMoves:
             score = score +10
 
-        return score
-
-
-    # checks if the move you are going to remove in backtracking is a valid move due to some neighbouring square or not, if yes it shouldn't be removed. Means if that move is surrounded by some disc then its a neighbouring sqaure of that disc so its a valid move
-    def find_valid_moves(self, moves):
-	valid_moves = set()
-	for move in moves:
-		for direction in self.directions:
-			check_row = move[0] + direction[0]
-            		check_col = move[1] + direction[1]
-            		if (0 <= check_row < self.size and 0 <= check_col < self.size and self.board[check_row][check_col]!=' '):
-                		valid_moves.add(move)
-				break
-
-	return valid_moves		
-	
-    # returns moves ordered in descending order of their values
-    def order_moves(self, playerColor,oppColor,alpha,beta,depth):
-	global DEPTHLIMIT
-	moves = self.FindMoves(playerColor,oppColor)
-	# temporarily change the value
-	DEPTHLIMIT = 2
-	ordered_moves = []
-	respective_ordered_vals = []
-	for move in moves:
-		board = copy.deepcopy(self.board)
-	        board_changed = 0
-		if self.place_piece(move[0],move[1],playerColor,oppColor):
-			board_changed = 1
-			self.possible_moves.remove((move[0],move[1]))
-			new_moves = self.get_possible_moves(move[0], move[1])
-			self.possible_moves = self.possible_moves.union(new_moves)	
-            	v = self.minply(playerColor,oppColor,alpha,beta,depth+1)
-		self.board = board
-		if board_changed == 1:
-			board_changed = 0
-			# backtrack and add the move removed
-			self.possible_moves.add((move[0],move[1]))
-			# fetch the moves which are valid and which should not be removed during backtracking
-			valid_moves = self.find_valid_moves(new_moves)
-			# subtract  the valid moves from the new_moves so they won't be removed from possible_moves set
-			new_moves -= valid_moves
-			# remove the moves which were added based on the move removed previously
-			self.possible_moves -= new_moves
-		index = 0
-		for val in respective_ordered_vals:
-			if val < v:
-				break
-			index += 1
-		respective_ordered_vals.insert(index, v)
-		ordered_moves.insert(index, move)
-	#print ("Moves:"+ str(ordered_moves))
-	#print ("Values:"+ str(respective_ordered_vals))	
-	# Reset it back to 6
-	DEPTHLIMIT = 6
-	return ordered_moves
-						
+        return score					
 			
-                    
 
 
     def MaxplyMaster(self,playerColor,oppColor,alpha,beta,depth):
@@ -266,9 +275,7 @@ class TeamA:
 		board = copy.deepcopy(self.board)
 		if self.place_piece(move[0],move[1],playerColor,oppColor):
 			board_changed = 1
-			self.possible_moves.remove((move[0],move[1]))
-			new_moves = self.get_possible_moves(move[0], move[1])
-			self.possible_moves = self.possible_moves.union(new_moves)
+			new_moves = self.update_possible_moves(move[0], move[1])
 			
                 v = self.minply(playerColor,oppColor,alpha,beta,depth+1)
                 if (alpha < v):
@@ -277,16 +284,8 @@ class TeamA:
                 self.board = board
 		if board_changed == 1:
 			board_changed = 0
-			# backtrack and add the move removed
-			self.possible_moves.add((move[0],move[1]))
-			# fetch the moves which are valid and which should not be removed during backtracking
-			valid_moves = self.find_valid_moves(new_moves)
-			# subtract  the valid moves from the new_moves so they won't be removed from possible_moves set
-			new_moves -= valid_moves
-			# remove the moves which were added based on the move removed previously
-			self.possible_moves -= new_moves
-			
-                if(beta <= alpha):
+			self.backtrack_and_update_possible_moves(move[0],move[1],new_moves)
+		if(beta <= alpha):
                     return alpha
             return v
 
@@ -302,22 +301,14 @@ class TeamA:
 		board = copy.deepcopy(self.board)
 		if self.place_piece(move[0],move[1], oppColor, playerColor):
 			board_changed = 1
-			self.possible_moves.remove((move[0],move[1]))
-			new_moves = self.get_possible_moves(move[0], move[1])
-			self.possible_moves = self.possible_moves.union(new_moves)
+			new_moves = self.update_possible_moves(move[0], move[1])
 			
                 v = min(v,self.maxply(playerColor,oppColor,alpha,beta,depth+1))
                 self.board = board
 		# backtrack and add the move removed
 	        if board_changed == 1:
             		board_changed = 0
-			self.possible_moves.add((move[0],move[1]))
-			# fetch the moves which are valid and which should not be removed during backtracking
-			valid_moves = self.find_valid_moves(new_moves)
-			# subtract  the valid moves from the new_moves so they won't be removed from possible_moves set
-			new_moves -= valid_moves
-			# remove the moves which were added based on the move removed previously
-			self.possible_moves -= new_moves
+			self.backtrack_and_update_possible_moves(move[0],move[1],new_moves)
 			
                 beta = min(beta,v)
                 if(beta <= alpha):
@@ -336,24 +327,14 @@ class TeamA:
                 board = copy.deepcopy(self.board)
                 if self.place_piece(move[0],move[1],playerColor,oppColor):
 			board_changed = 1
-			self.possible_moves.remove((move[0],move[1]))
-			new_moves = self.get_possible_moves(move[0], move[1])
-			self.possible_moves = self.possible_moves.union(new_moves)
+			new_moves = self.update_possible_moves(move[0], move[1])
 			
                 v = max(v,self.minply(playerColor,oppColor,alpha,beta,depth+1))
                 self.board = board
 		if board_changed == 1:
             		board_changed = 0
-			self.possible_moves.add((move[0],move[1]))
-			# fetch the moves which are valid and which should not be removed during backtracking
-			valid_moves = self.find_valid_moves(new_moves)
-			# subtract  the valid moves from the new_moves so they won't be removed from possible_moves set
-			new_moves -= valid_moves
-			# remove the moves which were added based on the move removed previously
-			self.possible_moves -= new_moves
-			
-                
-                alpha = max(alpha,v)
+			self.backtrack_and_update_possible_moves(move[0],move[1],new_moves)
+		alpha = max(alpha,v)
                 if(alpha >= beta):
                     return alpha
             return v
