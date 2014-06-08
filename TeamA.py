@@ -1,10 +1,9 @@
 from __future__ import print_function
 import copy
+import time
 __author__ = 'Madhunisha'
 
 
-
-DEPTHLIMIT = 6
 
 class TeamA:
     def __init__(self):
@@ -36,8 +35,11 @@ class TeamA:
         #  a list of legal moves for both the players
         #  for white sqaures possible moves
         self.possible_moves = set (((2,2), (2,3), (2,4), (2,5), (3,2), (3,5), (4,2), (4,5), (5,2), (5,3), (5,4), (5,5)))
-	
-    
+	self.start_time = 0
+	self.wait_time = 13
+	self.depthlimit = 0
+        self.timeout = 0
+
     def PrintBoard(self):
         # Print column numbers
         print("  ",end="")
@@ -121,10 +123,11 @@ class TeamA:
 
     # returns moves ordered in descending order of their values
     def order_moves(self, playerColor,oppColor,alpha,beta,depth):
-	global DEPTHLIMIT
 	moves = self.FindMoves(playerColor,oppColor)
-	# temporarily change the value
-	DEPTHLIMIT = 2
+	# save the current depthlimit
+	depth_limit = self.depthlimit
+	# temporarily set it to 2
+	self.depthlimit = 2
 	ordered_moves = []
 	respective_ordered_vals = []
 	for move in moves:
@@ -145,10 +148,10 @@ class TeamA:
 			index += 1
 		respective_ordered_vals.insert(index, v)
 		ordered_moves.insert(index, move)
-	#print ("Moves:"+ str(ordered_moves))
-	#print ("Values:"+ str(respective_ordered_vals))	
-	# Reset it back to 6
-	DEPTHLIMIT = 6
+	# Reset depthlimit for full fledged search
+	self.depthlimit = depth_limit
+	# print ("Moves:"+ str(ordered_moves))
+	# print ("Values:"+ str(respective_ordered_vals))	
 	return ordered_moves
 	
 
@@ -224,20 +227,33 @@ class TeamA:
     #  the best move, determined by the make_move(...) function
     def play_square(self, row, col, playerColor, oppColor):
     # Place a piece of the opponent's color at (row,col)
-         if (row, col) != (-1, -1):
-                if self.place_piece(row, col, oppColor, playerColor):
+	 self.start_time = time.time()
+	 if (row, col) != (-1, -1):
+		if self.place_piece(row, col, oppColor, playerColor):
 			# obtain new possible moves surronding the last square played and add them, also delete the last square played
 			self.update_possible_moves(row, col)
-                # Determine best move and return value to Matchmaker
-                self.r = -1
-                self.c = -1
-                # print("|||||||||||||||||||||||||||||||||||||||||||||")
-                # self.PrintBoard()
-                # print("|||||||||||||||||||||||||||||||||||||||||||||")
-                self.MaxplyMaster(playerColor,oppColor,-1000,1000,0)
-                if self.place_piece(self.r, self.c,playerColor,oppColor):
-			self.update_possible_moves(self.r, self.c)                
-                return (self.r,self.c)
+         # Determine best move and return value to Matchmaker
+         self.r = -1
+         self.c = -1
+	 last_r = -1
+	 last_c = -1 
+	 self.depthlimit = 1
+	 self.timeout = 0 
+	 while self.depthlimit < 65:
+		self.MaxplyMaster(playerColor,oppColor,-1000,1000,0)
+		print ("depthlimit:"+str(self.depthlimit))
+		if self.timeout == 1:
+			break;
+         	# save the last stable move obtained after completely exploring till the previous depthlimit
+		last_r = self.r
+		last_c = self.c
+		self.depthlimit += 1
+		
+	 self.r = last_r
+	 self.c = last_c
+	 if self.place_piece(self.r, self.c,playerColor,oppColor):
+		self.update_possible_moves(self.r, self.c)
+	 return (self.r,self.c)
 
 
 
@@ -282,27 +298,32 @@ class TeamA:
 	    moves = self.order_moves(playerColor,oppColor,alpha,beta,depth)
 	    v = -1000
 	    board_changed = 0
-            for move in moves:
+	    for move in moves:
 		board = copy.deepcopy(self.board)
 		if self.place_piece(move[0],move[1],playerColor,oppColor):
 			board_changed = 1
 			new_moves = self.update_possible_moves(move[0], move[1])
 			
                 v = self.minply(playerColor,oppColor,alpha,beta,depth+1)
-                if (alpha < v):
-                    self.r,self.c = move[0],move[1]
-                    alpha = v
-                self.board = board
+		self.board = board
 		if board_changed == 1:
 			board_changed = 0
 			self.backtrack_and_update_possible_moves(move[0],move[1],new_moves)
-		if(beta <= alpha):
-                    return alpha
+		if (self.timeout == 1):
+		    break
+		if (alpha < v):
+                    self.r,self.c = move[0],move[1]
+                    alpha = v
             return v
 
 
     def minply(self,playerColor,oppColor,alpha,beta,depth):
-	if(depth >= DEPTHLIMIT):
+
+	if ((time.time() - self.start_time) > self.wait_time):
+	    self.timeout = 1 
+	    return -1
+
+	if(depth >= self.depthlimit):
 	    return self.evaluationfn(playerColor,oppColor)
         else:
 	    moves = self.FindMoves(oppColor,playerColor)
@@ -320,7 +341,8 @@ class TeamA:
 	        if board_changed == 1:
             		board_changed = 0
 			self.backtrack_and_update_possible_moves(move[0],move[1],new_moves)
-			
+		if self.timeout == 1:
+		    break	
                 beta = min(beta,v)
                 if(beta <= alpha):
                     return beta
@@ -328,7 +350,12 @@ class TeamA:
             return v
 
     def maxply(self,playerColor,oppColor,alpha,beta,depth):
-	if(depth >= DEPTHLIMIT):
+
+	if ((time.time() - self.start_time) > self.wait_time):
+	    self.timeout = 1
+	    return -1
+
+	if(depth >= self.depthlimit):
 	    return self.evaluationfn(playerColor,oppColor)
         else:
 	    moves = self.FindMoves(playerColor,oppColor)
@@ -345,9 +372,11 @@ class TeamA:
 		if board_changed == 1:
             		board_changed = 0
 			self.backtrack_and_update_possible_moves(move[0],move[1],new_moves)
-		alpha = max(alpha,v)
+		if self.timeout == 1:
+		    break	
+                alpha = max(alpha,v)
                 if(alpha >= beta):
-                    return alpha
+                   return alpha
             return v
 
 
