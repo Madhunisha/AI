@@ -16,6 +16,20 @@ class TeamA:
         self.board[4][3] = 'B'
         self.r = -1
         self.c = -1
+	self.valMatrix = [[' '] * 8 for i in range(8)]
+        self.valMatrix[0][0] = 50
+        self.valMatrix[0][1] = self.valMatrix[1][0] = -1
+        self.valMatrix[1][1] = -10
+        self.valMatrix[2][0] = self.valMatrix[0][2] = 5
+        self.valMatrix[0][3] = self.valMatrix[3][0] = 2
+        self.valMatrix[2][1] = self.valMatrix[2][2] = self.valMatrix[2][3] = self.valMatrix[1][2] = self.valMatrix[1][3] = self.valMatrix[3][1] = self.valMatrix[3][2] = 1
+        self.valMatrix[3][3] = 0
+        for x in range(0,4):
+            for i, j in zip(range(0,4), range(7, 3,-1)):
+                self.valMatrix[x][j] = self.valMatrix[x][i]
+        for x in range(0,8):
+            for i, j in zip(range(0,4), range(7, 3,-1)):
+                self.valMatrix[j][x] = self.valMatrix[i][x]
         # a list of unit vectors (row, col)
         print (self.board)
         self.directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
@@ -251,18 +265,15 @@ class TeamA:
                     score = score+0.01
                 elif(self.board[i][j] == oppColor):
                     score = score - 0.01
+
+
         playerPossibleMoves = self.FindMoves(PlayerColor,oppColor)
         opponentPossibleMoves = self.FindMoves(oppColor,PlayerColor)
         score = score + len(playerPossibleMoves)-len(opponentPossibleMoves)
-        if (0,0) in playerPossibleMoves and (0,0)not in opponentPossibleMoves:
-            score = score +10
-        if (0,7) in playerPossibleMoves and (0,7)not in opponentPossibleMoves:
-            score = score +10
-        if (7,0) in playerPossibleMoves and (7,0)not in opponentPossibleMoves:
-            score = score +10
-        if (7,7) in playerPossibleMoves and (7,7)not in opponentPossibleMoves:
-            score = score +10
-
+        for x in playerPossibleMoves:
+             score = score + self.valMatrix[x[0]][x[1]]
+        for x in opponentPossibleMoves:
+             score = score - self.valMatrix[x[0]][x[1]]
         return score					
 			
 
