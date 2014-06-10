@@ -5,7 +5,7 @@ __author__ = 'Madhunisha'
 
 
 
-class OldMonk:
+class NewMonk:
     def __init__(self):
         self.board = [[' '] * 8 for i in range(8)]
         self.size = 8
@@ -67,7 +67,7 @@ class OldMonk:
         #a chain of opponent pieces in that direction, which ends with one of the players pieces.
 
 
-    
+
     def get_possible_moves (self, row, col):
         possible_moves = set()
         for i in self.directions:
@@ -75,9 +75,9 @@ class OldMonk:
             check_col = col + i[1]
             if (0 <= check_row < self.size and 0 <= check_col < self.size and self.board[check_row][check_col]==' '):
                 possible_moves.add((check_row, check_col))
-		
+
         return possible_moves
-   
+
 
 
     def update_possible_moves(self, row, col):
@@ -97,7 +97,7 @@ class OldMonk:
         new_moves -= valid_moves
         # remove the moves which were added based on the move removed previously
         self.possible_moves -= new_moves
- 
+
 
 
     # checks if the move you are going to remove in backtracking is a valid move due to some neighbouring square or not, if yes it shouldn't be removed. Means if that move is surrounded by some disc then its a neighbouring sqaure of that disc so its a valid move
@@ -156,7 +156,7 @@ class OldMonk:
         # print ("Moves:"+ str(ordered_moves))
         #  print ("Values:"+ str(respective_ordered_vals))
         return ordered_moves
-	
+
 
 
     def islegal(self, row, col, player, opp):
@@ -225,7 +225,7 @@ class OldMonk:
         return legal
 
 
-    
+
     #  Places piece of opponent's color at (row,col) and then returns
     #  the best move, determined by the make_move(...) function
 
@@ -306,16 +306,16 @@ class OldMonk:
         opponentPossibleMoves = self.FindMoves(oppColor,PlayerColor)
         playmob = 100 * (len(playerPossibleMoves)/(len(playerPossibleMoves) + len(opponentPossibleMoves))) + (100 * (playdisc/(playdisc+oppdisc)) )
         oppmob = -100 * (len(opponentPossibleMoves)/(len(playerPossibleMoves) + len(opponentPossibleMoves))) + (100 * (oppdisc/(playdisc+oppdisc)) )
-        for x in playerPossibleMoves:
-             score = score + self.valMatrix[x[0]][x[1]]
-        for x in opponentPossibleMoves:
-             score = score - self.valMatrix[x[0]][x[1]]
+        # for x in playerPossibleMoves:
+        #      score = score + self.valMatrix[x[0]][x[1]]
+        # for x in opponentPossibleMoves:
+        #      score = score - self.valMatrix[x[0]][x[1]]
         corScore = 25 * playerCorner - 25 * oppCorner
 
         closeScore = -12.5 * playerClose + 12.5 * oppClose
         score = corScore+closeScore+playmob+oppmob
-        return score					
-			
+        return score
+
 
 
     def MaxplyMaster(self,playerColor,oppColor,alpha,beta,depth):
@@ -384,7 +384,7 @@ class OldMonk:
                 if self.place_piece(move[0],move[1],playerColor,oppColor):
                     board_changed = 1
                     new_moves = self.update_possible_moves(move[0], move[1])
-			
+
                 v = max(v,self.minply(playerColor,oppColor,alpha,beta,depth+1))
                 self.board = board
                 if board_changed == 1:
