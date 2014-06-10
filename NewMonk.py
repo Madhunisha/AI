@@ -153,8 +153,8 @@ class NewMonk:
             ordered_moves.insert(index, move)
         # Reset depthlimit for full fledged search
         self.depthlimit = depth_limit
-        # print ("Moves:"+ str(ordered_moves))
-        #  print ("Values:"+ str(respective_ordered_vals))
+        #print ("Moves:"+ str(ordered_moves))
+        #print ("Values:"+ str(respective_ordered_vals))
         return ordered_moves
 
 
@@ -243,8 +243,10 @@ class NewMonk:
         last_c = -1
         self.depthlimit = 1
         self.timeout = 0
+	moves = self.order_moves(playerColor,oppColor,-1000,1000,0)
+        
         while self.depthlimit < 65:
-            self.MaxplyMaster(playerColor,oppColor,-1000,1000,0)
+            self.MaxplyMaster(playerColor,oppColor,-1000,1000,0, moves)
             if self.timeout == 1:
                 break;
             # save the last stable move obtained after completely exploring till the previous depthlimit
@@ -305,23 +307,24 @@ class NewMonk:
         playerPossibleMoves = self.FindMoves(PlayerColor,oppColor)
         opponentPossibleMoves = self.FindMoves(oppColor,PlayerColor)
         playmob = 100 * (len(playerPossibleMoves)/(len(playerPossibleMoves) + len(opponentPossibleMoves))) + (100 * (playdisc/(playdisc+oppdisc)) )
-        oppmob = -100 * (len(opponentPossibleMoves)/(len(playerPossibleMoves) + len(opponentPossibleMoves))) + (100 * (oppdisc/(playdisc+oppdisc)) )
-        # for x in playerPossibleMoves:
+        oppmob = -100 * (len(opponentPossibleMoves)/(len(playerPossibleMoves) + len(opponentPossibleMoves))) - (100 * (oppdisc/(playdisc+oppdisc)) )
+        #for x in playerPossibleMoves:
         #      score = score + self.valMatrix[x[0]][x[1]]
-        # for x in opponentPossibleMoves:
+        #for x in opponentPossibleMoves:
         #      score = score - self.valMatrix[x[0]][x[1]]
         corScore = 25 * playerCorner - 25 * oppCorner
 
         closeScore = -12.5 * playerClose + 12.5 * oppClose
         score = corScore+closeScore+playmob+oppmob
+	#print ("score:"+str(score))
         return score
 
 
 
-    def MaxplyMaster(self,playerColor,oppColor,alpha,beta,depth):
-        moves = self.order_moves(playerColor,oppColor,alpha,beta,depth)
+    def MaxplyMaster(self,playerColor,oppColor,alpha,beta,depth, moves):
         v = -1000
         board_changed = 0
+	#print (moves)
         for move in moves:
             board = copy.deepcopy(self.board)
             if self.place_piece(move[0],move[1],playerColor,oppColor):
