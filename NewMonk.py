@@ -244,21 +244,20 @@ class NewMonk:
         self.depthlimit = 1
         self.timeout = 0
 	moves = self.order_moves(playerColor,oppColor,-1000,1000,0)
-        
         while self.depthlimit < 65:
-            self.MaxplyMaster(playerColor,oppColor,-1000,1000,0, moves)
+            val = self.MaxplyMaster(playerColor,oppColor,-1000,1000,0, moves)
             if self.timeout == 1:
                 break;
             # save the last stable move obtained after completely exploring till the previous depthlimit
             last_r = self.r
             last_c = self.c
-            self.depthlimit += 1
+	    self.depthlimit += 1
 
         self.r = last_r
         self.c = last_c
         if self.place_piece(self.r, self.c,playerColor,oppColor):
             self.update_possible_moves(self.r, self.c)
-        return (self.r,self.c)
+	return (self.r,self.c)
 
 
 
@@ -306,8 +305,8 @@ class NewMonk:
                         oppClose = oppClose+1
         playerPossibleMoves = self.FindMoves(PlayerColor,oppColor)
         opponentPossibleMoves = self.FindMoves(oppColor,PlayerColor)
-        playmob = 100 * (len(playerPossibleMoves)/(len(playerPossibleMoves) + len(opponentPossibleMoves))) + (100 * (playdisc/(playdisc+oppdisc)) )
-        oppmob = -100 * (len(opponentPossibleMoves)/(len(playerPossibleMoves) + len(opponentPossibleMoves))) - (100 * (oppdisc/(playdisc+oppdisc)) )
+        playmob = 100 * (len(playerPossibleMoves)/(len(playerPossibleMoves) + len(opponentPossibleMoves))) + (10 * (playdisc/(playdisc+oppdisc)) )
+        oppmob = -100 * (len(opponentPossibleMoves)/(len(playerPossibleMoves) + len(opponentPossibleMoves))) - (10 * (oppdisc/(playdisc+oppdisc)) )
         #for x in playerPossibleMoves:
         #      score = score + self.valMatrix[x[0]][x[1]]
         #for x in opponentPossibleMoves:
