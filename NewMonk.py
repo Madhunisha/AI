@@ -16,12 +16,6 @@ class OldMonk:
         self.c = -1
         self.corners = [(0,0),(0,7),(7,0),(7,7)]
         self.cornerdiag = [(1,1),(1,6),(6,1),(6,6),(1,0),(0,1),(0,6),(1,7),(6,0),(7,1),(7,6),(6,7)]
-        for x in range(0,4):
-            for i, j in zip(range(0,4), range(7, 3,-1)):
-                self.valMatrix[x][j] = self.valMatrix[x][i]
-        for x in range(0,8):
-            for i, j in zip(range(0,4), range(7, 3,-1)):
-                self.valMatrix[j][x] = self.valMatrix[i][x]
         # a list of unit vectors (row, col)
         print (self.board)
         self.directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
