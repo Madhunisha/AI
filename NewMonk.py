@@ -1,11 +1,10 @@
 from __future__ import print_function
 import copy
 import time
-__author__ = 'Madhunisha'
 
 
 
-class NewMonk:
+class OldMonk:
     def __init__(self):
         self.board = [[' '] * 8 for i in range(8)]
         self.size = 8
@@ -15,16 +14,6 @@ class NewMonk:
         self.board[4][3] = 'B'
         self.r = -1
         self.c = -1
-        self.valMatrix = [[' '] * 8 for i in range(8)]
-        self.valMatrix[0][0] = 20
-        self.valMatrix[0][1] = self.valMatrix[1][0] = -3
-        self.valMatrix[1][1] = -7
-        self.valMatrix[2][0] = self.valMatrix[0][2] = 11
-        self.valMatrix[0][3] = self.valMatrix[3][0] = 8
-        self.valMatrix[2][1] = self.valMatrix[1][2] = -4
-        self.valMatrix[2][2] = self.valMatrix[2][3] = self.valMatrix[3][2] = 2
-        self.valMatrix[3][3] = -3
-        self.valMatrix[3][1] = self.valMatrix[1][3] = 1
         self.corners = [(0,0),(0,7),(7,0),(7,7)]
         self.cornerdiag = [(1,1),(1,6),(6,1),(6,6),(1,0),(0,1),(0,6),(1,7),(6,0),(7,1),(7,6),(6,7)]
         for x in range(0,4):
@@ -243,7 +232,7 @@ class NewMonk:
         last_c = -1
         self.depthlimit = 1
         self.timeout = 0
-	moves = self.order_moves(playerColor,oppColor,-1000,1000,0)
+        moves = self.order_moves(playerColor,oppColor,-1000,1000,0)
         while self.depthlimit < 65:
             val = self.MaxplyMaster(playerColor,oppColor,-1000,1000,0, moves)
             if self.timeout == 1:
@@ -251,13 +240,13 @@ class NewMonk:
             # save the last stable move obtained after completely exploring till the previous depthlimit
             last_r = self.r
             last_c = self.c
-	    self.depthlimit += 1
+            self.depthlimit += 1
 
         self.r = last_r
         self.c = last_c
         if self.place_piece(self.r, self.c,playerColor,oppColor):
             self.update_possible_moves(self.r, self.c)
-	return (self.r,self.c)
+        return (self.r,self.c)
 
 
 
@@ -311,6 +300,18 @@ class NewMonk:
         #      score = score + self.valMatrix[x[0]][x[1]]
         #for x in opponentPossibleMoves:
         #      score = score - self.valMatrix[x[0]][x[1]]
+        for x in self.corners:
+            for y in playerPossibleMoves:
+                if x==y:
+                    #print("Match:"+str(x) + "=" + str(y))
+                    score = score + 10
+                    break
+        for x in self.corners:
+            for y in opponentPossibleMoves:
+                if x==y:
+                    score = score - 10
+                    break
+
         corScore = 25 * playerCorner - 25 * oppCorner
 
         closeScore = -12.5 * playerClose + 12.5 * oppClose
